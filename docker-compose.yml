@@ -1,4 +1,4 @@
-version: '3'
+version: '3.2'
 #networks:
 #  fastdfs-net:
 #    external: true
@@ -11,43 +11,91 @@ services:
     image: ygqygq2/fastdfs-nginx:latest
     command: tracker
     #network_mode: host
+    restart: always
     networks:
       - fastdfs-net
+    ports:
+      - "17080:80"
+      - "17083:22122"      
     volumes:   
-      - /var/fdfs/tracker:/var/fdfs    
+      - type: bind
+        source: /var/fdfs/tracker
+        target: /var/fdfs
+      - type: bind
+        source: ./nginx_conf/conf.d/tracker.conf
+        target: /nginx_conf/conf.d/tracker.conf
+      - type: bind
+        source: ./start.sh
+        target: /usr/bin/start.sh    
   storage0:
     container_name: storage0
+    image: ygqygq2/fastdfs-nginx:latest
+    command: storage
+    #network_mode: host
+    restart: always  
+    networks:
+      - fastdfs-net
+    ports:
+      - "17081:8080"      
+    environment:
+      - TRACKER_SERVER=tracker:22122
+    volumes: 
+      - type: bind
+        source: /var/fdfs/storage0
+        target: /var/fdfs
+      - type: bind
+        source: ./start.sh
+        target: /usr/bin/start.sh
+          
+  storage1:
+    container_name: storage1
     image: ygqygq2/fastdfs-nginx:latest
     command: storage
     #network_mode: host  
     networks:
       - fastdfs-net
+    restart: always    
+    ports:
+      - "17082:8080"      
     environment:
       - TRACKER_SERVER=tracker:22122
     volumes: 
-      - /var/fdfs/storage0:/var/fdfs
-  # storage1:
-  #   container_name: storage1
-  #   image: ygqygq2/fastdfs-nginx:latest
-  #   command: storage
-  #   #network_mode: host  
-  #   networks:
-  #     - fastdfs-net
-  #   environment:
-  #     - TRACKER_SERVER=10.1.5.85:22122
-  #   volumes: 
-  #     - /var/fdfs/storage1:/var/fdfs
-  #  storage2:
-  #   container_name: storage2
-  #   image: ygqygq2/fastdfs-nginx:latest
-  #   command: storage
-  #   #network_mode: host  
-  #   networks:
-  #     - fastdfs-net  
-  #   environment:
-  #     - TRACKER_SERVER=10.1.5.85:22122
-  #     - GROUP_NAME=group2
-  #     - PORT=24000
-  #   volumes: 
-  #     - /var/fdfs/storage2:/var/fdfs           
+      - type: bind
+        source: /var/fdfs/storage1
+        target: /var/fdfs
+      - type: bind
+        source: ./start.sh
+        target: /usr/bin/start.sh 
+  app:
+     container_name: fastdfs-app
+     image: openjdk:8
+     command: java -jar /usr/src/FileUploadServer-1.0-SNAPSHOT.jar
+     networks:
+       - fastdfs-net
+     restart: always 
+     ports:
+       - "17084:9444"
+     environment:
+       - uploadPath=/home      
+     volumes:
+       - type: bind
+         source: /srv/dev-disk-by-label-files/video/transfer/FileUploadServer-1.0-SNAPSHOT.jar
+         target: /usr/src/FileUploadServer-1.0-SNAPSHOT.jar
+  database:
+     container_name: fdfs-mariadb
+     image: mariadb
+     networks:
+       - fastdfs-net
+     restart: always     
+     ports:
+       - "17085:3306"
+     environment:
+       - MYSQL_ROOT_PASSWORD=MyPWD
+     volumes:
+       - type: volume
+         source: fastdfs-db
+         target: /var/lib/mysql     
+volumes:
+   fastdfs-db:     
+     
                     

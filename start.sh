@@ -38,13 +38,18 @@ function fdfs_set () {
     if [ -f "$FASTDFS_LOG_FILE" ]; then 
         rm "$FASTDFS_LOG_FILE"
     fi
+   
+    mkdir /var/fdfs/logs
+    touch "$FASTDFS_LOG_FILE"
+
     # start the fastdfs node.	
     fdfs_${FASTDFS_MODE}d /etc/fdfs/${FASTDFS_MODE}.conf start
 }
 
 function nginx_set () {
     # start nginx.
-    if [ "${FASTDFS_MODE}" = "storage" ]; then
+    #if [ "${FASTDFS_MODE}" = "storage" ]; then
+    if [ "1" = "1" ]; then
         cp -f /nginx_conf/conf.d/${FASTDFS_MODE}.conf /usr/local/nginx/conf/conf.d/
         sed -i "s|group1|${GROUP_NAME}|g" /usr/local/nginx/conf/conf.d/${FASTDFS_MODE}.conf
     fi
